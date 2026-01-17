@@ -1,26 +1,355 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Color Palette - SF/Military Interface Theme */
+  --background: #F0F2F5;
+  --foreground: #1A1A1A;
+  --grid-color: #D0D5DD;
+  --border-color: #9CA3AF;
+  --card-bg: #FAFBFC;
+  --tech-blue: #3B82F6;
+  --tech-blue-light: #60A5FA;
+  --military-green: #10B981;
+  --military-green-light: #34D399;
+  --text-secondary: #6B7280;
+  --target-mark: #4B5563;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-grid: var(--grid-color);
+  --color-border: var(--border-color);
+  --color-card-bg: var(--card-bg);
+  --color-tech-blue: var(--tech-blue);
+  --color-tech-blue-light: var(--tech-blue-light);
+  --color-military-green: var(--military-green);
+  --color-military-green-light: var(--military-green-light);
+  --color-text-secondary: var(--text-secondary);
+  --color-target-mark: var(--target-mark);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-mono: var(--font-share-tech-mono), var(--font-roboto-mono), monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-tactical: var(--font-rajdhani), sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Global scan line effect */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(transparent 0%,
+      rgba(59, 130, 246, 0.03) 50%,
+      transparent 100%);
+  background-size: 100% 4px;
+  animation: global-scan 8s linear infinite;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes global-scan {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 0 100vh;
+  }
+}
+
+/* Grid Background Pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Target Mark Decorations */
+.target-mark {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.target-mark::before,
+.target-mark::after {
+  content: '';
+  position: absolute;
+  background: var(--target-mark);
+}
+
+/* Top-left corner */
+.target-mark.top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.target-mark.top-left::before {
+  width: 1px;
+  height: 20px;
+  top: 0;
+  left: 0;
+}
+
+.target-mark.top-left::after {
+  width: 20px;
+  height: 1px;
+  top: 0;
+  left: 0;
+}
+
+/* Top-right corner */
+.target-mark.top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.target-mark.top-right::before {
+  width: 1px;
+  height: 20px;
+  top: 0;
+  right: 0;
+}
+
+.target-mark.top-right::after {
+  width: 20px;
+  height: 1px;
+  top: 0;
+  right: 0;
+}
+
+/* Bottom-left corner */
+.target-mark.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.target-mark.bottom-left::before {
+  width: 1px;
+  height: 20px;
+  bottom: 0;
+  left: 0;
+}
+
+.target-mark.bottom-left::after {
+  width: 20px;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+}
+
+/* Bottom-right corner */
+.target-mark.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.target-mark.bottom-right::before {
+  width: 1px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+}
+
+.target-mark.bottom-right::after {
+  width: 20px;
+  height: 1px;
+  bottom: 0;
+  right: 0;
+}
+
+/* Additional crosshair for target marks */
+.target-mark .crosshair {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.target-mark .crosshair::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--target-mark);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.target-mark .crosshair::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--target-mark);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Card Styles */
+.technical-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.technical-card:hover {
+  border-color: var(--tech-blue);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Tactical corner decorations */
+.technical-card::before,
+.technical-card::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--tech-blue);
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.technical-card::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.technical-card::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+.technical-card:hover::before,
+.technical-card:hover::after {
+  opacity: 1;
+}
+
+/* Monospace text */
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* Utility classes for technical styling */
+.data-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.coordinate-text {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* Scan line animation */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(transparent, var(--tech-blue), transparent);
+  animation: scan 4s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Tactical image filter effect */
+.tactical-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.tactical-image img {
+  filter: grayscale(100%) contrast(1.3) brightness(0.9) !important;
+  transition: filter 0.3s ease;
+}
+
+.tactical-image::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(135deg,
+      rgba(0, 255, 255, 0.2) 0%,
+      rgba(0, 255, 0, 0.15) 50%,
+      rgba(0, 255, 255, 0.2) 100%) !important;
+  mix-blend-mode: screen !important;
+  pointer-events: none !important;
+  opacity: 0.6 !important;
+  z-index: 1 !important;
+}
+
+.tactical-image:hover img {
+  filter: grayscale(100%) contrast(1.5) brightness(1.0) !important;
+}
+
+.tactical-image:hover::after {
+  opacity: 0.8 !important;
+}
+
+/* Tactical font styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.mono,
+.data-label,
+.coordinate-text {
+  font-family: var(--font-mono);
 }

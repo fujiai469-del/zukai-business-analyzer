@@ -1,7 +1,10 @@
+'use client';
+
 import { Business } from '@/lib/types';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 interface BusinessCardProps {
     business: Business;
@@ -12,6 +15,47 @@ interface BusinessCardProps {
 export default function BusinessCard({ business, index, isLoading = false }: BusinessCardProps) {
     // Dynamically get the icon component
     const IconComponent = (LucideIcons[business.icon as keyof typeof LucideIcons] as LucideIcon) || LucideIcons.Circle;
+    
+    // State for async image loading
+    const [imageUrl, setImageUrl] = useState<string | null>(business.imageUrl || null);
+    const [imageLoading, setImageLoading] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    // Load image asynchronously if imagePrompt exists but imageUrl doesn't
+    useEffect(() => {
+        if (business.imagePrompt && !imageUrl && !imageLoading && !imageError) {
+            setImageLoading(true);
+            
+            // Add delay to avoid rate limiting (stagger requests)
+            const delay = index * 500; // 0ms, 500ms, 1000ms for each card
+            
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ prompt: business.imagePrompt }),
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.imageUrl) {
+                        setImageUrl(data.imageUrl);
+                    } else {
+                        console.error('Image generation failed:', data.error);
+                        setImageError(true);
+                    }
+                } catch (error) {
+                    console.error('Image generation request failed:', error);
+                    setImageError(true);
+                } finally {
+                    setImageLoading(false);
+                }
+            }, delay);
+        }
+    }, [business.imagePrompt, imageUrl, imageLoading, imageError, index]);
 
     return (
         <div className="technical-card p-8 flex flex-col items-center text-center h-full relative overflow-hidden group">
@@ -25,16 +69,23 @@ export default function BusinessCard({ business, index, isLoading = false }: Bus
 
             {/* Icon/Image area */}
             <div className="mb-6 relative w-full flex justify-center">
-                {isLoading ? (
+                {isLoading || imageLoading ? (
                     // Loading skeleton
                     <div className="w-48 h-48 flex items-center justify-center border border-border rounded bg-background/50 animate-pulse">
-                        <div className="text-text-secondary mono text-xs">GENERATING...</div>
+                        <div className="text-text-secondary mono text-xs">
+                            {imageLoading ? 'GENERATING IMAGE...' : 'GENERATING...'}
+                        </div>
                     </div>
-                ) : business.imageUrl ? (
+                ) : imageError ? (
+                    // Error state
+                    <div className="w-48 h-48 flex items-center justify-center border border-red-500 rounded bg-background/50">
+                        <div className="text-red-500 mono text-xs">IMAGE ERROR</div>
+                    </div>
+                ) : imageUrl ? (
                     // Generated image with tactical filter
                     <div className="w-48 h-48 relative border border-border group-hover:border-tech-blue transition-colors overflow-hidden bg-background/50 tactical-image">
                         <Image
-                            src={business.imageUrl}
+                            src={imageUrl}
                             alt={business.title}
                             fill
                             className="object-cover"

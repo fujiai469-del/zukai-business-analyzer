@@ -74,52 +74,14 @@ JSON形式（このJSON以外は出力しないでください）:
             throw new Error('Invalid analysis data structure');
         }
 
-        // 2. Generate images using Imagen 3
-        const imageModel = genAI.getGenerativeModel({ model: 'imagen-3.0-generate-001' });
-
-        const businessesWithImages = await Promise.all(
-            analysisData.businesses.slice(0, 3).map(async (business: any) => {
-                try {
-                    // Generate image with Imagen 3
-                    const imageResult = await imageModel.generateContent(business.imagePrompt);
-
-                    // Extract image data from response
-                    const response = imageResult.response;
-
-                    // Try to get image from candidates
-                    if (response.candidates && response.candidates.length > 0) {
-                        const candidate = response.candidates[0];
-                        if (candidate.content && candidate.content.parts) {
-                            for (const part of candidate.content.parts) {
-                                if (part.inlineData && part.inlineData.data) {
-                                    const base64Image = part.inlineData.data;
-                                    const mimeType = part.inlineData.mimeType || 'image/png';
-
-                                    return {
-                                        ...business,
-                                        imageUrl: `data:${mimeType};base64,${base64Image}`
-                                    };
-                                }
-                            }
-                        }
-                    }
-
-                    // If image generation failed, return without image
-                    console.warn('No image data in response for:', business.title);
-                    return business;
-                } catch (imageError) {
-                    console.error('Image generation error for', business.title, ':', imageError);
-                    // Return business data without image on error
-                    return business;
-                }
-            })
-        );
+        // Return business data with image prompts (images will be generated asynchronously on the client side)
+        const businessesWithPrompts = analysisData.businesses.slice(0, 3);
 
         return NextResponse.json({
             success: true,
             data: {
                 name: companyName,
-                businesses: businessesWithImages
+                businesses: businessesWithPrompts
             }
         });
 

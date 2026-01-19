@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Generate image using Imagen 3
-        // Use the correct model name: imagen-3.0-generate-001
-        const imageModel = genAI.getGenerativeModel({ model: 'imagen-3.0-generate-001' });
+        // Generate image using Imagen 4 Fast
+        // Use the correct model name: imagen-4.0-fast-generate-001
+        const imageModel = genAI.getGenerativeModel({ model: 'imagen-4.0-fast-generate-001' });
 
         // Set timeout to 8 seconds to avoid Vercel's 10-second limit
         const timeoutPromise = new Promise((_, reject) => {

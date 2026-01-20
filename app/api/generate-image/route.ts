@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini API
 const apiKey = process.env.GOOGLE_API_KEY;
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
+        const ai = new GoogleGenAI({ apiKey });
 
         // Parse request body
         const { prompt } = await request.json();
@@ -27,55 +27,62 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate image using Imagen 4 Fast
-        // Use the correct model name: imagen-4.0-fast-generate-001
-        const imageModel = genAI.getGenerativeModel({ model: 'imagen-4.0-fast-generate-001' });
-
-        // Set timeout to 8 seconds to avoid Vercel's 10-second limit
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Image generation timeout')), 8000);
+        // Use the correct model name and API: ai.models.generateImages
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-fast-generate-001',
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                aspectRatio: '1:1'
+            }
         });
 
-        const imageGenerationPromise = imageModel.generateContent(prompt);
+        // Check if images were generated
+        if (!response.generatedImages || response.generatedImages.length === 0) {
+            return NextResponse.json(
+                { success: false, error: 'No image generated' },
+                { status: 500 }
+            );
+        }
 
-        const imageResult = await Promise.race([
-            imageGenerationPromise,
-            timeoutPromise
-        ]) as any;
-
-        // Extract image data from response
-        const response = imageResult.response;
-
-        // Try to get image from candidates
-        if (response.candidates && response.candidates.length > 0) {
-            const candidate = response.candidates[0];
-            if (candidate.content && candidate.content.parts) {
-                for (const part of candidate.content.parts) {
-                    if (part.inlineData && part.inlineData.data) {
-                        const base64Image = part.inlineData.data;
-                        const mimeType = part.inlineData.mimeType || 'image/png';
-
-                        return NextResponse.json({
-                            success: true,
-                            imageUrl: `data:${mimeType};base64,${base64Image}`
-                        });
-                    }
-                }
+        // Get the first generated image
+        const generatedImage = response.generatedImages[0];
+        
+        // The image object contains the image data
+        // We need to convert it to base64 for transmission
+        const imageData = generatedImage.image;
+        
+        // Convert image to base64 if it's a Buffer
+        let base64Image: string;
+        if (Buffer.isBuffer(imageData)) {
+            base64Image = imageData.toString('base64');
+        } else if (typeof imageData === 'string') {
+            base64Image = imageData;
+        } else {
+            // If it's an object with data property
+            const imgObj = imageData as any;
+            if (imgObj.data) {
+                base64Image = Buffer.from(imgObj.data).toString('base64');
+            } else {
+                return NextResponse.json(
+                    { success: false, error: 'Invalid image format' },
+                    { status: 500 }
+                );
             }
         }
 
-        // If no image data found
-        console.warn('No image data in response');
-        return NextResponse.json(
-            { success: false, error: 'No image data generated' },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            success: true,
+            image: `data:image/png;base64,${base64Image}`
+        });
 
     } catch (error: any) {
         console.error('Image generation error:', error);
         return NextResponse.json(
-            {
-                success: false,
-                error: error.message || 'Failed to generate image'
+            { 
+                success: false, 
+                error: error.message || 'Failed to generate image',
+                details: error.toString()
             },
             { status: 500 }
         );

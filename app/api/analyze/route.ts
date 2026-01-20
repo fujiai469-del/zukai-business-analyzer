@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini API
 const apiKey = process.env.GOOGLE_API_KEY;
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
+        const ai = new GoogleGenAI({ apiKey });
 
         // Parse request body
         const { companyName } = await request.json();
@@ -28,8 +28,6 @@ export async function POST(request: NextRequest) {
 
         // 1. Generate business analysis and image prompts using Gemini
         // Use gemini-2.5-flash (latest stable model)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
         const analysisPrompt = `あなたは防衛・軍事産業のビジネスアナリストです。
 
 企業名: ${companyName}
@@ -59,8 +57,12 @@ JSON形式（このJSON以外は出力しないでください）:
   ]
 }`;
 
-        const analysisResult = await model.generateContent(analysisPrompt);
-        const analysisText = analysisResult.response.text();
+        const analysisResult = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: analysisPrompt
+        });
+        
+        const analysisText = analysisResult.text;
 
         // Extract JSON from the response
         const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
